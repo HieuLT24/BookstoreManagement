@@ -116,6 +116,7 @@ def register_process():
 
 @app.route("/login", methods=['get', 'post'])
 def login_process():
+    err_msg = None
     if request.method.__eq__('POST'):
         username = request.form.get('username')
         password = request.form.get('password')
@@ -129,7 +130,7 @@ def login_process():
         else:
             err_msg = 'Tên đăng nhập hoặc mật khẩu không chính xác'
 
-    return render_template('login.html')
+    return render_template('login.html' , err_msg=err_msg)
 
 
 @app.route("/logout")
@@ -416,8 +417,11 @@ def load_user(user_id):
 
 @app.route('/cart', methods=['GET'])
 def cart():
+    key = app.config['CART_KEY']
+    cart = session.get(key)
+    has_items = bool(cart)  # Kiểm tra nếu giỏ hàng có sản phẩm (cart không rỗng)
     if current_user.is_authenticated:
-        return render_template('cart.html')
+        return render_template('cart.html', has_items=has_items)
     else:
         return render_template('cart.html')
 
@@ -1004,6 +1008,20 @@ def revenue_stats():
         stats = [stat for stat in stats if stat[0] == month]
 
     return render_template('admin\chart.html', stats=stats)
+@app.route("/cancel_order", methods=["POST"])
+@login_required
+def cancel_order():
+    data = request.get_json()
+    order_id = data.get("order_id")
+    # Cập nhật trạng thái đơn hàng trong cơ sở dữ liệu
+    success = dao.cancel_order(order_id, current_user.id)
+
+    if success:
+        print("Hủy đơn hàng thành công")
+        return jsonify({"message": "Hủy đơn hàng thành công"}), 200
+    else:
+        print("Không thể hủy đơn hàng")
+        return jsonify({"error": "Hủy đơn hàng thất bại"}), 400
 
 
 if __name__ == '__main__':
