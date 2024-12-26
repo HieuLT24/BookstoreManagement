@@ -617,11 +617,9 @@ def live_search():
 @app.route('/search_result')
 def search_result():
     query = request.args.get('q', '').strip().lower()
-    print(query)
     books = []
     if query:
         books = dao.search(query)
-        print(books)
     return render_template('search_result.html', books=books)
 
 
